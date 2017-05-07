@@ -13,8 +13,7 @@ You should change the following variables to your needs:
 
 
 <br/><br/><br/>
-<strong>Start Effects</strong>
-Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
+<strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
 
 http://[ip]:5001/control?animationid=fun
 
@@ -44,14 +43,12 @@ http://[ip]:5001/control?animationid=colorwhite
 
 
 <br/><br/><br/>
-<strong>Set Custom Colors</strong>
-You can add an RGB color code (9 digits) at the end of the color command to set a custom color
+<strong>Set Custom Colors</strong><br/>You can add an RGB color code (9 digits) at the end of the color command to set a custom color
 
 http://[ip]:5001/control?animationid=color255255255
 
 <br/><br/><br/>
-<strong>Set Brightness</strong>
-Value is a percent value between 0 and 100)
+<strong>Set Brightness</strong><br/>Value is a percent value between 0 and 100)
 
 http://[ip]:5001/control?brightness=20
 
