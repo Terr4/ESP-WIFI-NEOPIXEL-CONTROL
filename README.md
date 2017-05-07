@@ -12,56 +12,65 @@ You should change the following variables to your needs:
 - PixelPin (note that the pin is fixed to the RX pin on an ESP board, this config will be ignored on ESP boards)
 
 
+<br/><br/><br/>
 <strong>Start Effects</strong>
 Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
 
-http://<ip>:5001/control?animationid=fun
+http://[ip]:5001/control?animationid=fun
 
-http://<ip>:5001/control?animationid=beam
+http://[ip]:5001/control?animationid=beam
 
-http://<ip>:5001/control?animationid=fire
+http://[ip]:5001/control?animationid=fire
 
-http://<ip>:5001/control?animationid=aqua
+http://[ip]:5001/control?animationid=aqua
 
-http://<ip>:5001/control?animationid=pulse
+http://[ip]:5001/control?animationid=pulse
 
-http://<ip>:5001/control?animationid=cylon
+http://[ip]:5001/control?animationid=cylon
 
+<br/><br/><br/>
 <strong>Set Predefined Colors</strong>
 
-http://<ip>:5001/control?animationid=colorred
+http://[ip]:5001/control?animationid=colorred
 
-http://<ip>:5001/control?animationid=colorblue
+http://[ip]:5001/control?animationid=colorblue
 
-http://<ip>:5001/control?animationid=colorgreen
+http://[ip]:5001/control?animationid=colorgreen
 
-http://<ip>:5001/control?animationid=colorblack
+http://[ip]:5001/control?animationid=colorblack
 
-http://<ip>:5001/control?animationid=colorwhite
+http://[ip]:5001/control?animationid=colorwhite
 
 
 
+<br/><br/><br/>
 <strong>Set Custom Colors</strong>
 You can add an RGB color code (9 digits) at the end of the color command to set a custom color
 
-http://<ip>:5001/control?animationid=color255255255
+http://[ip]:5001/control?animationid=color255255255
 
+<br/><br/><br/>
 <strong>Set Brightness</strong>
 Value is a percent value between 0 and 100)
 
-http://<ip>:5001/control?brightness=20
+http://[ip]:5001/control?brightness=20
 
 
 
+<br/><br/><br/>
 <strong>Turn LED Strip off</strong>
-http://<ip>:5001/control?animationid=off
+
+http://[ip]:5001/control?animationid=off
 
 
 
+<br/><br/><br/>
 <strong>Get current status with</strong>
-http://<ip>:5001/control?status
+
+http://[ip]:5001/control?status
 
 
 
+<br/><br/><br/>
 <strong>Stefan Schmidhammer 2017</strong>
 
