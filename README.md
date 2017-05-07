@@ -62,7 +62,7 @@ http://[ip]:5001/control?animationid=off
 
 
 <br/><br/><br/>
-<strong>Get current status with</strong>
+<strong>Get current status as JSON with</strong>
 
 http://[ip]:5001/control?status
 
