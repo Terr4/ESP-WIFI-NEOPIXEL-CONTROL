@@ -3,6 +3,9 @@ NodeMCU script to control NeoPixel ws2812b led strips.
 Control colors, brightness and some effects with HTTP calls.
 
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/9A8iUpCb1MI" frameborder="0" allowfullscreen></iframe>
+
+
 Example Calls below</strong>
 The http server gets initialzed on port 5001, this can be changed in the code.
 You should change the following variables to your needs:
