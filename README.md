@@ -17,7 +17,9 @@ Effects were mainly taken from the standard NeoPixelBus example library and slig
 http://<ip>:5001/control?animationid=fun
 http://<ip>:5001/control?animationid=beam
 http://<ip>:5001/control?animationid=fire
+
 http://<ip>:5001/control?animationid=aqua
+
 http://<ip>:5001/control?animationid=pulse
 http://<ip>:5001/control?animationid=cylon
 
