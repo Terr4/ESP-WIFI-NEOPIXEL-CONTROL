@@ -37,7 +37,7 @@ http://<ip>:5001/control?brightness=20
 Turn LED Strip off
 http://<ip>:5001/control?animationid=off
 
-Get current status with:
+Get current status as JSON with
 http://<ip>:5001/control?status
 
 
