@@ -11,8 +11,8 @@ You should change the following variables to your needs:
 - wifi_password
 - PixelCount
 - PixelPin (note that the pin is fixed to the RX pin on an ESP board, this config will be ignored on ESP boards)
-
-
+<br/><br/>
+<h1>WIFI VERSION</h1>
 <br/><br/><br/>
 <strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
 
