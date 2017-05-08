@@ -1,6 +1,6 @@
 # ESP-WIFI-NEOPIXEL-CONTROL
 NodeMCU script to control NeoPixel ws2812b led strips.
-Control colors, brightness and some effects with HTTP and MQTT calls.
+Control colors, brightness and some effects with HTTP or MQTT calls.
 <br/><br/>
 <strong>Video of Script in Action</strong><br/>https://www.youtube.com/watch?v=9A8iUpCb1MI
 <br/><br/>
