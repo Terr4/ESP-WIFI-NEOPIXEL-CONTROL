@@ -68,6 +68,54 @@ http://[ip]:5001/control?animationid=off
 http://[ip]:5001/control?status
 
 
+<br/><br/>
+<h1>MQTT VERSION</h1>
+<pre>
+Control Controller:
+{
+  "animation":"fun",
+  "brightness":34,
+  "color":{
+    "r":9,
+    "g":49,
+    "b":9
+  }
+}
+Note: color values only get considered when animation=color is selected
+there are some default color "animations" that can be used: colorred, colorgreen, colorblue, colorwhite, colorblack
+
+Status of Controller:
+{
+  "uptime":143248,
+  "uptimeH":0,
+  "animation":"fun",
+  "brightness":34,
+  "brightnessraw":86,
+  "color":{
+    "r":9,
+    "g":49,
+    "b":9
+  }
+}
+</pre>
+
+<br/><br/>
+<h1>OpenHAB2 Config</h1>
+
+
+<br/><br/>
+<h3>ITEMS</h3>
+
+
+<br/><br/>
+<h3>SITEMAP</h3>
+
+
+<br/><br/>
+<h3>RULES</h3>
+
+
+
 
 <br/><br/><br/>
 <strong>Stefan Schmidhammer 2017</strong>
