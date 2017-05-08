@@ -109,11 +109,47 @@ Status of Controller:
 
 <br/><br/>
 <h3>SITEMAP</h3>
+<pre>
+Frame label="Movie Screen Light" icon="light" {
+  Selection item=Light_L_Digiledstrip mappings=[off="off", colorblue="Movie", beam="Beam", fun="Party", cylon="Cylon", pulse="Pulse", fire="Fire", aqua="Aqua"]
+  Colorpicker item=Light_L_Digiledstrip_Color
+  Slider item=Light_L_Digiledstrip_Bright
+  Text item=Light_L_Digiledstrip_Uptime
+}
 
+</pre>
 
 <br/><br/>
 <h3>RULES</h3>
+<pre>
+import java.awt.Color
 
+rule "LED controller Brightness"
+when
+  Item Light_L_Digiledstrip_Bright received command
+then
+  logInfo( "FILE", "RULE: LED controller Brightness triggered")
+  //sendHttpGetRequest("http://192.168.0.116:5001/control?brightness=" + Light_L_Digiledstrip_Bright.state)
+  publish("openhab2","home/ledcontroller1/set","{brightness:" + Light_L_Digiledstrip_Bright.state + "}")
+end
+
+rule "LED controller Color"
+when
+  Item Light_L_Digiledstrip_Color received command
+then
+  logInfo( "FILE", "RULE: LED controller Color triggered")
+  var hsbValue = Light_L_Digiledstrip_Color.state as HSBType
+  var Color color = Color::getHSBColor(hsbValue.hue.floatValue / 360, hsbValue.saturation.floatValue / 100, hsbValue.brightness.floatValue / 100)
+
+  var String redValue   = String.format("%03d", ((color.red.floatValue / 2.55).intValue))
+  var String greenValue = String.format("%03d", ((color.green.floatValue / 2.55).intValue))
+  var String blueValue  = String.format("%03d", ((color.blue.floatValue / 2.55).intValue))
+  logInfo("FILE", "RED: "+ redValue + " GREEN: "+ greenValue +  " BLUE: "+ blueValue + "")
+
+  //sendHttpGetRequest("http://192.168.0.116:5001/control?animationid=color" + redValue + greenValue + blueValue)
+  publish("openhab2","home/ledcontroller1/set","{animation:color,color:{r:" + redValue + ",g:" + greenValue + ",b:" + blueValue + "}}")
+end
+</pre>
 
 
 
