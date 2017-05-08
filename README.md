@@ -105,7 +105,14 @@ Status of Controller:
 
 <br/><br/>
 <h3>ITEMS</h3>
+<pre>
+String  Light_L_Digiledstrip_Anim       "Current Animation [%s]"        <light>  {mqtt="<[openhab2:home/ledcontroller1:state:JSONPATH($.animation)]"}
+String  Light_L_Digiledstrip_Bright     "Brightness [%s]"               <dimmablelight>  {mqtt="<[openhab2:home/ledcontroller1:state:JSONPATH($.brightness)]"}
+String  Light_L_Digiledstrip_Uptime     "Uptime [%s h]"                 <clock>  {mqtt="<[openhab2:home/ledcontroller1:state:JSONPATH($.uptimeH)]"}
+Color   Light_L_Digiledstrip_Color      "Color"                         <colorwheel>
 
+String  Light_L_Digiledstrip            "Movie Screen Animation"                <light> { mqtt=">[openhab2:home/ledcontroller1/set:command:*:{animation\\:${command}}]" }
+</pre>
 
 <br/><br/>
 <h3>SITEMAP</h3>
