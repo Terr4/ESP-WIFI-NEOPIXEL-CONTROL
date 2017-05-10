@@ -31,22 +31,23 @@ home/ledcontroller/set -> control effects, brightness, animation, color on this 
 home/ledcontroller/log -> receive log messages and errors on this topic 
 
 <h2>Control LED effects</h2>
-Send JSON commands to the MQTT SET topic to change the effect and brghtness:
+Send JSON commands to the MQTT SET topic to change the effect and brightness:
 
-Set animation FIRE:
+Set animation FUN:
 <pre>{"animation":"fun"}</pre>
+Possible values: off, beam, fun, cylon, pulse, fire, aqua
 
 Set brightness (0-100):
 <pre>{"brightness":20}</pre>
 
-Set animation COLOR with predefined color values:
+Set static color with predefined color values:
 <pre>{"animation":"colorred"}
 {"animation":"colorblue"}
 {"animation":"colorgreen"}
 {"animation":"colorwhite"}
 {"animation":"colorblack"}</pre>
 
-Set animation COLOR with RGB values:
+Set static color with RGB values:
 <pre>{"animation":"color","color":{"r":200,"g":200,"b":10}}</pre>
 
 Set all at once:
