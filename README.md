@@ -25,6 +25,11 @@ You should change the following variables to your needs:
 <br/><br/>
 <h1>MQTT VERSION</h1>
 
+The MQTT version uses 3 topics:
+home/ledcontroller/ -> you will receive status changes on this topic 
+home/ledcontroller/set -> control effects, brightness, animation, color on this topic 
+home/ledcontroller/log -> receive log messages and errors on this topic 
+
 <h2>Control LED effects</h2>
 Send JSON commands to the MQTT SET topic to change the effect and brghtness:
 
@@ -134,8 +139,9 @@ end
 
 
 <h1>WIFI VERSION (legacy)</h1>
-<br/><br/>
-<strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
+
+<h3>Start Effects</h3>
+Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
 
 <pre>http://[ip]:5001/control?animationid=fun
 http://[ip]:5001/control?animationid=beam
@@ -144,8 +150,8 @@ http://[ip]:5001/control?animationid=aqua
 http://[ip]:5001/control?animationid=pulse
 http://[ip]:5001/control?animationid=cylon</pre>
 
-<br/><br/>
-<strong>Set Predefined Colors</strong>
+
+<h3>Set Predefined Colors</h3>
 
 <pre>http://[ip]:5001/control?animationid=colorred
 http://[ip]:5001/control?animationid=colorblue
@@ -153,23 +159,21 @@ http://[ip]:5001/control?animationid=colorgreen
 http://[ip]:5001/control?animationid=colorblack
 http://[ip]:5001/control?animationid=colorwhite</pre>
 
-<br/><br/>
-<strong>Set Custom Colors</strong><br/>You can add an RGB color code (9 digits) at the end of the color command to set a custom color
+<h3>Set Custom Colors</h3>
+You can add an RGB color code (9 digits) at the end of the color command to set a custom color
 
 <pre>http://[ip]:5001/control?animationid=color255255255</pre>
 
-<br/><br/>
-<strong>Set Brightness</strong><br/>Value is a percent value between 0 and 100)
+<h3>Set Brightness</h3>
+Value is a percent value between 0 and 100)
 
 <pre>http://[ip]:5001/control?brightness=20</pre>
 
-<br/><br/>
-<strong>Turn LED Strip off</strong>
+<h3>Turn LED Strip off</h3>
 
 <pre>http://[ip]:5001/control?animationid=off</pre>
 
-<br/><br/>
-<strong>Get current status as JSON with</strong>
+<h3>Get current status as JSON with</h3>
 
 <pre>http://[ip]:5001/control?status</pre>
 The returned message is the same as in the MQTT version
@@ -177,6 +181,6 @@ The returned message is the same as in the MQTT version
 
 
 
-<br/><br/><br/>
+<br/><br/>
 <strong>Stefan Schmidhammer 2017</strong>
 
