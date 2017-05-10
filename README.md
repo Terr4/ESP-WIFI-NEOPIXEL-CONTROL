@@ -8,14 +8,14 @@ https://www.youtube.com/watch?v=9A8iUpCb1MI
 
 <h3>Config</h3>
 The http server gets initialzed on port 5001, this can be changed in the code.<br/>
-You should change the following variables to your needs:
-- wifi_ssid
-- wifi_password
-- mqtt_server
-- mqtt_user
-- mqtt_password
-- OTA_hostname
-- OTA_password
+You should change the following variables to your needs:<br/>
+- wifi_ssid<br/>
+- wifi_password<br/>
+- mqtt_server<br/>
+- mqtt_user<br/>
+- mqtt_password<br/>
+- OTA_hostname<br/>
+- OTA_password<br/>
 - PixelCount
 
 <br/><br/>
