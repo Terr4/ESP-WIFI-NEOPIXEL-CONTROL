@@ -1,130 +1,312 @@
 /*
 NodeMCU script to control NeoPixel ws2812b led strips.
 Control colors, brightness and some effects with HTTP calls.
-
-Example Calls below.
-The http server gets initialzed on port 5001, this can be changed in the code.
-You should change the following variables to your needs:
-- wifi_ssid
-- wifi_password
-- PixelCount
-- PixelPin (note that the pin is fixed to the RX pin on an ESP board, this config will be ignored on ESP boards)
-
-Control Controller:
-{
-  "animation":"fun",
-  "brightness":34,
-  "color":{
-    "r":9,
-    "g":49,
-    "b":9
-  }
-}
-Note: color values only get considered when animation=color is selected
-there are some default color "animations" that can be used: colorred, colorgreen, colorblue, colorwhite, colorblack
-
-Status of Controller:
-{
-  "uptime":143248,
-  "uptimeH":0,
-  "animation":"fun",
-  "brightness":34,
-  "brightnessraw":86,
-  "color":{
-    "r":9,
-    "g":49,
-    "b":9
-  }
-}
-
+  _____                 
+ |_   ____ _ _ _ _ __ _ 
+   | |/ -_| '_| '_/ _` |
+   |_|\___|_| |_| \__,_|
 Stefan Schmidhammer 2017
+GPL-3.0
+
+Some animation effects are based upon the NeoPixelBus library Examples published by Michael Miller / Makuna at
+https://github.com/Makuna/NeoPixelBus
 */
 
+/***************************************************** LIBRARIES ***/
 #include <ESP8266WiFi.h>
-#include <DHT.h>
 #include <PubSubClient.h>
 #include <ESP8266mDNS.h>
-#include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBrightnessBus.h>
-#include <ctype.h>
 
-/************ WIFI and MQTT INFORMATION (CHANGE THESE FOR YOUR SETUP) ******************/
-#define wifi_ssid "<yourwifissid>"
-#define wifi_password "<yourwifipassword>"
-#define mqtt_server "<brokerip>"
-#define mqtt_user "<brokeruser>" 
-#define mqtt_password "brokerpassword>"
+
+/************************************* WIFI AND MQTT INFORMATION ***/
+#define wifi_ssid "<wifi_ssid>"
+#define wifi_password "<wifi_password>"
+
+#define mqtt_server "<mqtt_brokerip>"
+#define mqtt_user "<mqtt_user>"
+#define mqtt_password "<mqtt_password>"
 #define mqtt_port 1883
-bool dbg = true;
+#define mqtt_topic_state "home/ledcontroller"
+#define mqtt_topic_set "home/ledcontroller/set"
+#define mqtt_topic_log "home/ledcontroller/log"
 
-/************* MQTT TOPICS (change these topics as you wish)  **************************/
-#define ledcontroller_state_topic "home/ledcontroller1"
-#define ledcontroller_set_topic "home/ledcontroller1/set"
+/**************************************************** OTA UPDATE ***/
+#define OTA_hostname "<OTA_hostname>"
+#define OTA_password "<OTA_password>"
+const uint16_t OTA_port = 8266;
 
-/**************************** FOR OTA **************************************************/
-#define SENSORNAME "<OTAname>"
-#define OTApassword "<OTApassword>"
-int OTAport = 8266;
+/**************************************** NEOPIXELBUS/LED CONFIG ***/
+const uint16_t PixelCount = 250;
+const uint16_t PixelPin   = 2; //ignored in case of ESP8266
 
-
-
-const int BUFFER_SIZE = 300;
-
-
-//LED Strip Config
-const uint16_t PixelCount = 248;
-const uint16_t PixelPin   = 2;
-
-NeoPixelBrightnessBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
-
-struct MyAnimationState
-{
+/****************************************** USER DEFINED CLASSES ***/
+struct MyAnimationState {
     RgbColor StartingColor;
     RgbColor EndingColor;
-    uint16_t IndexPixel; // which pixel this animation is effecting
+    uint16_t IndexPixel;
 };
 
+/*************************************** GLOBAL VARS AND OBJECTS ***/
+//init brightness levels
+uint16_t brightnessLevelPercent = 40;
+uint16_t brightnessLevel = brightnessLevelPercent*2.55;
 
-NeoPixelAnimator animations(PixelCount);
-MyAnimationState animationState[PixelCount];
+//some control and state variables
+bool StopSignReceived           = false;
+bool WaitForReset               = false;
+unsigned long WaitForResetTimer = false;
+bool StartAnimationOnce         = true;
+const uint16_t ResetAnimationDuration = 300; //change this to make the switch to other animations faster or slower
+const int MQTT_BUFFER_SIZE = 500;
+float startmillis;
 
+//some default colors
 RgbColor red(255, 0, 0);
 RgbColor green(0, 255, 0);
 RgbColor blue(0, 0, 255);
 RgbColor white(255);
 RgbColor black(0);
-uint16_t brightnessLevelPercent = 40;
-uint16_t brightnessLevel = brightnessLevelPercent*2.55;
-String brightnessLevelStr;
 
-bool StopSignReceived           = false;
-bool WaitForReset               = false;
-unsigned long WaitForResetTimer = false;
-bool StartAnimationOnce         = true;
-uint16_t ResetAnimationDuration = 300;
+//default animation on startup
+String definedAnimation     = "off";
+String definedAnimationNext = "off";
+String ColorOfStripStr      = "";
+RgbColor ColorOfStrip       = green;
 
-String definedAnimation         = "fun";
-String definedAnimationNext     = "fun";
-String animationType = "";
-
+//valid animation array
 String AnimTypes[] = {"fun","pulse","cylon","color","fire","aqua","beam","off"};
 uint16_t AnimCount = 8;
 
-float startmillis;
-
-
-
+NeoPixelBrightnessBus<NeoGrbFeature, Neo800KbpsMethod> strip(PixelCount, PixelPin);
+NeoPixelAnimator animations(PixelCount);
+MyAnimationState animationState[PixelCount];
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+#define MQTT_MAX_PACKET_SIZE 512
+//note that you may have to change the MAX_PACKET_SIZE in the header file 
+//of the library itself
 
 
 // ################################################################################################################
 // ################################################################################################################
-// FUN
+// USER DEFINED FRAMEWORK FUNCTIONS
+// ################################################################################################################
+void setup_wifi() {
+
+  delay(10);
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(wifi_ssid);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(wifi_ssid, wifi_password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  sendLog("OK", "Node has started");
+
+}
+
+void mqtt_callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+
+  char message[length + 1];
+  for (int i = 0; i < length; i++) {
+    message[i] = (char)payload[i];
+  }
+  message[length] = '\0';
+  Serial.println(message);
+
+  if (!processJsonMessage(message)) {
+    return;
+  }
+
+}
+
+bool processJsonMessage(char* message) {
+
+  StaticJsonBuffer<MQTT_BUFFER_SIZE> jsonBuffer;
+
+  JsonObject& root = jsonBuffer.parseObject(message);
+
+  if (!root.success()) {
+    sendLog("FAIL","parseObject() failed");
+    return false;
+  }
+
+
+  if ( root.containsKey("animation") ) {
+
+    String animationType = "";
+    animationType = root["animation"].asString();
+    if( animationType != definedAnimation || animationType.indexOf("color") == 0 ) {
+  
+      String ColorOfStripStr  = "";
+      if( animationType.indexOf("color") == 0 ) {
+
+        ColorOfStripStr = animationType.substring( 5 , (animationType.length()) ); //substring colorcode or name
+        animationType   = "color";
+  
+        if( ColorOfStripStr == "red" ) {
+          ColorOfStrip = red;
+        } else if( ColorOfStripStr == "blue" ) {
+          ColorOfStrip = blue;
+        } else if( ColorOfStripStr == "green" ) {
+          ColorOfStrip = green;
+        } else if( ColorOfStripStr == "black" ) {
+          ColorOfStrip = black;
+        } else if( ColorOfStripStr == "white" ) {
+          ColorOfStrip = white;
+        } else if( root.containsKey("color") ) {
+          String r = root["color"]["r"].asString();
+          String g = root["color"]["g"].asString();
+          String b = root["color"]["b"].asString();
+          if( isValidNumber(r+g+b) ) {
+            ColorOfStrip = RgbColor( r.toInt() , g.toInt() , b.toInt() );
+          }
+        }
+  
+      }
+
+      if( !inArray(AnimTypes, AnimCount, animationType) ) {
+        sendLog("FAIL","Invalid animation received, fallback to Fire animation: " + animationType);
+        definedAnimationNext = "fire";
+        animationType        = "fire";
+      }
+  
+      sendLog("OK","Set new animation '" + animationType + "' with optional strip color '" + ColorOfStripStr + "'");
+      StopSignReceived     = true;
+      definedAnimationNext = animationType;
+      definedAnimation     = "";
+      StartAnimationOnce   = true;
+  
+    }
+
+  }
+  
+  if ( root.containsKey("brightness") ) {
+
+    String brightnessLevelStr    = root["brightness"].asString();
+    if( brightnessLevelStr.length() <= 3 && brightnessLevelStr.length() >= 1 && isValidNumber(brightnessLevelStr) ) {
+      brightnessLevelPercent = brightnessLevelStr.toInt();
+      brightnessLevel = brightnessLevelPercent*2.55;
+      if( brightnessLevelPercent >= 0 && brightnessLevelPercent <= 100 ) {
+        strip.SetBrightness( brightnessLevel );
+        sendLog("OK","Set Brightness: " + brightnessLevel);
+        sendState();
+      } else {
+        sendLog("FAIL","Brightness was not set, invalid value passed, must be 0-100: " + brightnessLevel);
+      }
+    } else {
+      sendLog("FAIL","Brightness was not set, invalid value passed: " + brightnessLevelStr);
+    }
+  }
+
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+
+    // Attempt to connect
+    if (client.connect(OTA_hostname, mqtt_user, mqtt_password)) {
+      Serial.println("connected");
+      client.subscribe(mqtt_topic_set);
+      sendState();
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
+void sendState() {
+
+  StaticJsonBuffer<MQTT_BUFFER_SIZE> jsonBuffer;
+
+  JsonObject& root        = jsonBuffer.createObject();
+  root["uptime"]          = millis();
+  root["uptimeH"]         = millis()/1000/60/60;
+  root["animation"]       = definedAnimation+definedAnimationNext;
+  root["brightness"]      = brightnessLevelPercent;
+  root["brightnessraw"]   = brightnessLevel;
+
+  JsonObject& strip_color = root.createNestedObject("color");
+  strip_color["r"]        = ColorOfStrip.R;
+  strip_color["g"]        = ColorOfStrip.G;
+  strip_color["b"]        = ColorOfStrip.B;
+
+  char buffer[root.measureLength() + 1];
+  root.printTo(buffer, sizeof(buffer));
+
+  Serial.println(buffer);
+  client.publish(mqtt_topic_state, buffer, true);
+
+}
+
+void sendLog(String code,String message) {
+
+  StaticJsonBuffer<MQTT_BUFFER_SIZE> jsonBuffer;
+
+  JsonObject& root = jsonBuffer.createObject();
+  root["host"]     = OTA_hostname;
+  root["code"]     = code;
+  root["message"]  = message;
+
+  char buffer[root.measureLength() + 1];
+  root.printTo(buffer, sizeof(buffer));
+
+  Serial.println(buffer);
+  client.publish(mqtt_topic_log, buffer, true);
+
+}
+
+boolean isValidNumber(String str) {
+   for(byte i=0;i<str.length();i++)
+   {
+       if(!(isDigit(str.charAt(i)) || str.charAt(i) == '+' || str.charAt(i) == '.' || str.charAt(i) == '-')) return false;
+   }
+   return true;
+}
+
+boolean inArray(String arr[], int count, String needle) {
+  for(int a=0;a < count;a++) {
+    if( arr[a] == needle ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ################################################################################################################
+// USER DEFINED FRAMEWORK FUNCTIONS
+// ################################################################################################################
+// ################################################################################################################
+
+
+
+
+// ################################################################################################################
+// ################################################################################################################
+// ANIMATION FUN
 // ################################################################################################################
 void FunLights(float luminance) {
   if(StopSignReceived == false) {
@@ -145,7 +327,7 @@ void FunLightsAnim(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// FUN
+// ANIMATION FUN
 // ################################################################################################################
 // ################################################################################################################
 
@@ -154,7 +336,7 @@ void FunLightsAnim(const AnimationParam& param) {
 
 // ################################################################################################################
 // ################################################################################################################
-// PULSE
+// ANIMATION PULSE
 // ################################################################################################################
 void PulseLights(float luminance) {
   if(StopSignReceived == false) {
@@ -176,7 +358,7 @@ void PulseLightsAnim(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// PULSE
+// ANIMATION PULSE
 // ################################################################################################################
 // ################################################################################################################
 
@@ -186,7 +368,7 @@ void PulseLightsAnim(const AnimationParam& param) {
 
 // ################################################################################################################
 // ################################################################################################################
-// CYLON
+// ANIMATION CYLON
 // ################################################################################################################
 const RgbColor CylonEyeColor(HtmlColor(0x7f0000));
 uint16_t CylonLastPixel = 0; // track the eye position
@@ -271,7 +453,7 @@ void CylonMoveAnimUpdate(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// CYLON
+// ANIMATION CYLON
 // ################################################################################################################
 // ################################################################################################################
 
@@ -279,10 +461,8 @@ void CylonMoveAnimUpdate(const AnimationParam& param) {
 
 // ################################################################################################################
 // ################################################################################################################
-// COLOR
+// ANIMATION COLOR
 // ################################################################################################################
-RgbColor ColorOfStrip  = green;
-String ColorOfStripStr = "";
 void ColorLights(float luminance) {
   if(StopSignReceived == false && StartAnimationOnce == true) {
     for(int pixel=0; pixel < PixelCount; pixel++) {
@@ -303,7 +483,7 @@ void ColorLightsAnim(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// COLOR
+// ANIMATION COLOR
 // ################################################################################################################
 // ################################################################################################################
 
@@ -311,16 +491,16 @@ void ColorLightsAnim(const AnimationParam& param) {
 
 // ################################################################################################################
 // ################################################################################################################
-// FIRE
+// ANIMATION FIRE
 // ################################################################################################################
 
-int fire_r = 255;
-int fire_g = fire_r-180;
-int fire_b = 40;
-int fire_flicker;
-int fire_r_fadein;
-int fire_g_fadein;
-int fire_b_fadein;
+uint16_t fire_r = 255;
+uint16_t fire_g = fire_r-180;
+uint16_t fire_b = 40;
+uint16_t fire_flicker;
+int16_t fire_r_fadein;
+int16_t fire_g_fadein;
+int16_t fire_b_fadein;
 void FireLights(float luminance) {
   if(StopSignReceived == false) {
     for(int pixel=0; pixel < PixelCount; pixel++) {
@@ -347,7 +527,7 @@ void FireLightsAnim(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// FIRE
+// ANIMATION FIRE
 // ################################################################################################################
 // ################################################################################################################
 
@@ -356,16 +536,16 @@ void FireLightsAnim(const AnimationParam& param) {
 
 // ################################################################################################################
 // ################################################################################################################
-// AQUA
+// ANIMATION AQUA
 // ################################################################################################################
 
-int aqua_r = 10;
-int aqua_g = aqua_r-180;
-int aqua_b = 255;
-int aqua_flicker;
-int aqua_r_fadein;
-int aqua_g_fadein;
-int aqua_b_fadein;
+uint16_t aqua_r = 10;
+uint16_t aqua_g = aqua_r-180;
+uint16_t aqua_b = 255;
+uint16_t aqua_flicker;
+int16_t aqua_r_fadein;
+int16_t aqua_g_fadein;
+int16_t aqua_b_fadein;
 void AquaLights(float luminance) {
   if(StopSignReceived == false) {
     for(int pixel=0; pixel < PixelCount; pixel++) {
@@ -392,16 +572,14 @@ void AquaLightsAnim(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// AQUA
+// ANIMATION AQUA
 // ################################################################################################################
 // ################################################################################################################
 
 
-
-
 // ################################################################################################################
 // ################################################################################################################
-// BEAM
+// ANIMATION BEAM
 // ################################################################################################################
 uint16_t BeamFrontPixel = 0;  // the front of the loop
 RgbColor BeamFrontColor;  // the color at the front of the loop
@@ -440,16 +618,14 @@ void BeamFadeOutAnimUpdate(const AnimationParam& param) {
   }
 }
 // ################################################################################################################
-// BEAM
+// ANIMATION BEAM
 // ################################################################################################################
 // ################################################################################################################
 
 
-
-
 // ################################################################################################################
 // ################################################################################################################
-// STOP
+// ANIMATION STOP
 // ################################################################################################################
 void stopAllAnimations() {
   //Serial.println("stop animation defined, running for " + String(ResetAnimationDuration) + "ms");
@@ -464,10 +640,66 @@ void stopAllAnimationsAnim(const AnimationParam& param) {
   strip.SetPixelColor(param.index, black);
 }
 // ################################################################################################################
-// STOP
+// ANIMATION STOP
 // ################################################################################################################
 // ################################################################################################################
 
+
+
+
+
+
+
+
+
+
+void setup() {
+
+  Serial.begin(115200);
+  delay(4);
+
+  ArduinoOTA.setPort(OTA_port);
+  ArduinoOTA.setHostname(OTA_hostname);
+  ArduinoOTA.setPassword((const char *)OTA_password);
+
+  Serial.println("Starting Node named " + String(OTA_hostname));
+
+  setup_wifi();
+
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(mqtt_callback);
+
+
+  ArduinoOTA.onStart([]() {
+    Serial.println("Starting");
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  Serial.println("Ready");
+  Serial.print("IPess: ");
+  Serial.println(WiFi.localIP());
+
+
+  strip.Begin();
+  strip.Show();
+  strip.SetBrightness(brightnessLevel);
+
+  startmillis = millis();
+
+}
 
 void loop() {
 
@@ -525,266 +757,3 @@ void loop() {
   client.loop();
  
 }
-
-
-
-
-
-
-
-void setup() {
-
-  if(dbg) {
-    Serial.begin(115200);
-    delay(4);
-  }
-
-  ArduinoOTA.setPort(OTAport);
-  ArduinoOTA.setHostname(SENSORNAME);
-  ArduinoOTA.setPassword((const char *)OTApassword);
-
-  Serial.println("Starting Node named " + String(SENSORNAME));
-
-  setup_wifi();
-
-  client.setServer(mqtt_server, mqtt_port);
-  client.setCallback(callback);
-
-
-  ArduinoOTA.onStart([]() {
-    Serial.println("Starting");
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
-  Serial.println("Ready");
-  Serial.print("IPess: ");
-  Serial.println(WiFi.localIP());
-
-
-  strip.Begin();
-  strip.Show();
-  strip.SetBrightness(brightnessLevel);
-
-  startmillis = millis();
-
-}
-
-
-
-
-/********************************** START SETUP WIFI*****************************************/
-void setup_wifi() {
-
-  delay(10);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(wifi_ssid);
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(wifi_ssid, wifi_password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-
-
-/********************************** START CALLBACK*****************************************/
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-
-  char message[length + 1];
-  for (int i = 0; i < length; i++) {
-    message[i] = (char)payload[i];
-  }
-  message[length] = '\0';
-  Serial.println(message);
-
-  if (!processJsonMessage(message)) {
-    return;
-  }
-
-}
-
-
-bool processJsonMessage(char* message) {
-
-  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
-
-  JsonObject& root = jsonBuffer.parseObject(message);
-
-  if (!root.success()) {
-    Serial.println("parseObject() failed");
-    return false;
-  }
-
-
-  if ( root.containsKey("animation") ) {
-
-    animationType = root["animation"].asString();
-    if( animationType != definedAnimation || animationType.indexOf("color") == 0 ) {
-  
-      ColorOfStripStr  = "";
-      if( animationType.indexOf("color") == 0 ) {
-  
-        //Serial.println("Color Animation found");
-
-        ColorOfStripStr = animationType.substring( 5 , (animationType.length()) ); //substring colorcode or name
-        animationType   = "color";
-  
-        if( ColorOfStripStr == "red" ) {
-          ColorOfStrip = red;
-        } else if( ColorOfStripStr == "blue" ) {
-          ColorOfStrip = blue;
-        } else if( ColorOfStripStr == "green" ) {
-          ColorOfStrip = green;
-        } else if( ColorOfStripStr == "black" ) {
-          ColorOfStrip = black;
-        } else if( ColorOfStripStr == "white" ) {
-          ColorOfStrip = white;
-        } else if( root.containsKey("color") ) {
-          String r = root["color"]["r"].asString();
-          String g = root["color"]["g"].asString();
-          String b = root["color"]["b"].asString();
-          if( isValidNumber(r+g+b) ) {
-            ColorOfStrip = RgbColor( r.toInt() , g.toInt() , b.toInt() );
-          }
-        }
-  
-      }
-
-      //Serial.println("Set Animation: " + animationType);
-
-      if( !inArray(AnimTypes, AnimCount, animationType) ) {
-        definedAnimationNext = "fire";
-        animationType        = "fire";
-        Serial.println("Invalid Animation, fallback to Fire Animation");
-      }
-  
-      //Serial.println("Set new animation: " + animationType + " with color: " + ColorOfStripStr);
-      StopSignReceived     = true;
-      definedAnimationNext = animationType;
-      definedAnimation     = "";
-      StartAnimationOnce   = true;
-  
-    }
-
-  }
-  
-  if ( root.containsKey("brightness") ) {
-
-    //Serial.print("Try to set Brightness: ");
-    //Serial.println(root["brightness"].asString());
-
-    brightnessLevelStr    = root["brightness"].asString();
-    if( brightnessLevelStr.length() <= 3 && brightnessLevelStr.length() >= 1 && isValidNumber(brightnessLevelStr) ) {
-      brightnessLevelPercent = brightnessLevelStr.toInt();
-      brightnessLevel = brightnessLevelPercent*2.55;
-      if( brightnessLevelPercent >= 0 && brightnessLevelPercent <= 100 ) {
-        strip.SetBrightness( brightnessLevel );
-        //Serial.print("Set Brightness: ");
-        sendState();
-        //client.println("{ \"code\":\"OK\", \"info\":\"brightness set to " + String(brightnessLevelPercent) + "%\" }");
-      } else {
-        //client.println("{ \"code\":\"FAIL\", \"info\":\"brightness was not set, invalid number range passed\" }");
-      }
-    } else {
-      //client.println("{ \"code\":\"FAIL\", \"info\":\"brightness was not set, invalid value passed\" }");
-    }
-  }
-
-}
-
-
-/********************************** START RECONNECT*****************************************/
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-
-    // Attempt to connect
-    if (client.connect(SENSORNAME, mqtt_user, mqtt_password)) {
-      Serial.println("connected");
-      client.subscribe(ledcontroller_set_topic);
-      sendState();
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-}
-
-/********************************** START SEND STATE*****************************************/
-void sendState() {
-
-  StaticJsonBuffer<BUFFER_SIZE> jsonBuffer;
-
-  JsonObject& root        = jsonBuffer.createObject();
-  root["uptime"]          = millis();
-  root["uptimeH"]          = millis()/1000/60/60;
-  root["animation"]       = definedAnimation+definedAnimationNext;
-  root["brightness"]      = brightnessLevelPercent;
-  root["brightnessraw"]   = brightnessLevel;
-
-  JsonObject& color = root.createNestedObject("color");
-  color["r"]        = ColorOfStrip.R;
-  color["g"]        = ColorOfStrip.G;
-  color["b"]        = ColorOfStrip.B;
-
-  char buffer[root.measureLength() + 1];
-  root.printTo(buffer, sizeof(buffer));
-
-  Serial.println(buffer);
-  client.publish(ledcontroller_state_topic, buffer, true);
-
-}
-
-
-
-// ################################################################################################################
-// ################################################################################################################
-// GLOBAL FUNCTIONS
-// ################################################################################################################
-
-boolean isValidNumber(String str) {
-   for(byte i=0;i<str.length();i++)
-   {
-       if(!(isDigit(str.charAt(i)) || str.charAt(i) == '+' || str.charAt(i) == '.' || str.charAt(i) == '-')) return false;
-   }
-   return true;
-}
-
-boolean inArray(String arr[], int count, String needle) {
-  for(int a=0;a < count;a++) {
-    if( arr[a] == needle ) {
-      return true;
-    }
-  }
-  return false;
-}
-
