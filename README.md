@@ -9,82 +9,49 @@ The http server gets initialzed on port 5001, this can be changed in the code.
 You should change the following variables to your needs:
 - wifi_ssid
 - wifi_password
+- mqtt_server
+- mqtt_user
+- mqtt_password
+- OTA_hostname
+- OTA_password
 - PixelCount
-- PixelPin (note that the pin is fixed to the RX pin on an ESP board, this config will be ignored on ESP boards)
-<br/><br/>
-<h1>WIFI VERSION</h1>
-<br/><br/><br/>
-<strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
-
-http://[ip]:5001/control?animationid=fun
-
-http://[ip]:5001/control?animationid=beam
-
-http://[ip]:5001/control?animationid=fire
-
-http://[ip]:5001/control?animationid=aqua
-
-http://[ip]:5001/control?animationid=pulse
-
-http://[ip]:5001/control?animationid=cylon
-
-<br/><br/><br/>
-<strong>Set Predefined Colors</strong>
-
-http://[ip]:5001/control?animationid=colorred
-
-http://[ip]:5001/control?animationid=colorblue
-
-http://[ip]:5001/control?animationid=colorgreen
-
-http://[ip]:5001/control?animationid=colorblack
-
-http://[ip]:5001/control?animationid=colorwhite
 
 
 
-<br/><br/><br/>
-<strong>Set Custom Colors</strong><br/>You can add an RGB color code (9 digits) at the end of the color command to set a custom color
-
-http://[ip]:5001/control?animationid=color255255255
-
-<br/><br/><br/>
-<strong>Set Brightness</strong><br/>Value is a percent value between 0 and 100)
-
-http://[ip]:5001/control?brightness=20
-
-
-
-<br/><br/><br/>
-<strong>Turn LED Strip off</strong>
-
-http://[ip]:5001/control?animationid=off
-
-
-
-<br/><br/><br/>
-<strong>Get current status as JSON with</strong>
-
-http://[ip]:5001/control?status
 
 
 <br/><br/>
 <h1>MQTT VERSION</h1>
 <pre>
-Control Controller:
-{
-  "animation":"fun",
-  "brightness":34,
-  "color":{
-    "r":9,
-    "g":49,
-    "b":9
-  }
-}
-Note: color values only get considered when animation=color is selected
-there are some default color "animations" that can be used: colorred, colorgreen, colorblue, colorwhite, colorblack
+<h2>Control LED effects</h2>
+Send JSON commands to the MQTT SET topic to change the effect and brghtness:
 
-Status of Controller:
+<h3>Set animation FIRE:</h3>
+<pre>{"animation":"fun"}</pre>
+
+Set brightness (0-100):
+<pre>{"brightness":20}</pre>
+
+Set animation COLOR with predefined color values:
+<pre>{"animation":"colorred"}
+{"animation":"colorblue"}
+{"animation":"colorgreen"}
+{"animation":"colorwhite"}
+{"animation":"colorblack"}</pre>
+
+Set animation COLOR with RGB values:
+<pre>{"animation":"color","color":{"r":200,"g":200,"b":10}}</pre>
+
+Set all at once:
+<pre>{"animation":"color","brightness":34,"color":{"r":200,"g":200,"b":10}}</pre>
+
+Note: color values only get considered when animation=color is selected
+
+<h2>Status of LED controller</h2>
+During startup and in case an effect changes the controller sends a status message to the MQTT topic.
+The status in a JSON message and looks like the following.
+The "uptime" value are the milliseconds since the controller was started, "uptimeH" are the hours since it was started.
+<pre>
 {
   "uptime":143248,
   "uptimeH":0,
@@ -99,9 +66,9 @@ Status of Controller:
 }
 </pre>
 
-<br/><br/>
-<h1>OpenHAB2 Config</h1>
 
+<br/><br/>
+<h1>Example OpenHAB2 Config</h1>
 
 <br/><br/>
 <h3>ITEMS</h3>
@@ -157,6 +124,61 @@ then
   publish("openhab2","home/ledcontroller1/set","{animation:color,color:{r:" + redValue + ",g:" + greenValue + ",b:" + blueValue + "}}")
 end
 </pre>
+
+
+
+
+
+
+
+
+<br/><br/>
+<h1>WIFI VERSION (legacy)</h1>
+<br/><br/><br/>
+<strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
+
+<pre>http://[ip]:5001/control?animationid=fun
+http://[ip]:5001/control?animationid=beam
+http://[ip]:5001/control?animationid=fire
+http://[ip]:5001/control?animationid=aqua
+http://[ip]:5001/control?animationid=pulse
+http://[ip]:5001/control?animationid=cylon</pre>
+
+<br/><br/><br/>
+<strong>Set Predefined Colors</strong>
+
+<pre>http://[ip]:5001/control?animationid=colorred
+http://[ip]:5001/control?animationid=colorblue
+http://[ip]:5001/control?animationid=colorgreen
+http://[ip]:5001/control?animationid=colorblack
+http://[ip]:5001/control?animationid=colorwhite</pre>
+
+
+<br/><br/><br/>
+<strong>Set Custom Colors</strong><br/>You can add an RGB color code (9 digits) at the end of the color command to set a custom color
+
+<pre>http://[ip]:5001/control?animationid=color255255255</pre>
+
+<br/><br/><br/>
+<strong>Set Brightness</strong><br/>Value is a percent value between 0 and 100)
+
+<pre>http://[ip]:5001/control?brightness=20</pre>
+
+
+
+<br/><br/><br/>
+<strong>Turn LED Strip off</strong>
+
+<pre>http://[ip]:5001/control?animationid=off</pre>
+
+
+
+<br/><br/><br/>
+<strong>Get current status as JSON with</strong>
+
+<pre>http://[ip]:5001/control?status</pre>
+The returned message is the same as in the MQTT version
+
 
 
 
