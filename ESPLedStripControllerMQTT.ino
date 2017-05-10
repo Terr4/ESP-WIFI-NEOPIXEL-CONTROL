@@ -10,6 +10,9 @@ GPL-3.0
 
 Some animation effects are based upon the NeoPixelBus library Examples published by Michael Miller / Makuna at
 https://github.com/Makuna/NeoPixelBus
+
+Fire and Aqua effect based on Examples by John Wall
+www.walltech.cc/neopixel-fire-effect/
 */
 
 /***************************************************** LIBRARIES ***/
