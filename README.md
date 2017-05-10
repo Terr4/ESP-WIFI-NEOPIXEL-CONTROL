@@ -22,7 +22,7 @@ You should change the following variables to your needs:
 
 <br/><br/>
 <h1>MQTT VERSION</h1>
-<pre>
+
 <h2>Control LED effects</h2>
 Send JSON commands to the MQTT SET topic to change the effect and brghtness:
 
