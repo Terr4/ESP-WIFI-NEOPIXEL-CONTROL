@@ -1,6 +1,18 @@
 /*
 NodeMCU script to control NeoPixel ws2812b led strips.
 Control colors, brightness and some effects with HTTP calls.
+  _____                 
+ |_   ____ _ _ _ _ __ _ 
+   | |/ -_| '_| '_/ _` |
+   |_|\___|_| |_| \__,_|
+Stefan Schmidhammer 2017
+GPL-3.0
+
+Some animation effects are based upon the NeoPixelBus library Examples published by Michael Miller / Makuna at
+https://github.com/Makuna/NeoPixelBus
+
+Fire and Aqua effect based on Examples by John Wall
+www.walltech.cc/neopixel-fire-effect/
 
 Example Calls below.
 The http server gets initialzed on port 5001, this can be changed in the code.
@@ -45,14 +57,14 @@ http://<ip>:5001/control?status
 Stefan Schmidhammer 2017
 */
 
-#include "ESP8266WiFi.h"
+#include <ESP8266WiFi.h>
 #include <NeoPixelAnimator.h>
 #include <NeoPixelBrightnessBus.h>
 #include <ctype.h>
 
 //WiFi Config
-const char* wifi_ssid     = "<yourssid>";
-const char* wifi_password = "<yourwifipassword";
+const char* wifi_ssid     = "<wifi_ssid>";
+const char* wifi_password = "<wifi_password";
 WiFiServer server(5001);
 
 const bool dbg = false;
