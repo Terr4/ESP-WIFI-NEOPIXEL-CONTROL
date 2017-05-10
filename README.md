@@ -21,9 +21,9 @@ You should change the following variables to your needs:<br/>
 <br/><br/>
 <h1>MQTT VERSION</h1>
 
-The MQTT version uses 3 topics:
-home/ledcontroller/ -> you will receive status changes on this topic 
-home/ledcontroller/set -> control effects, brightness, animation, color on this topic 
+The MQTT version uses 3 topics:<br/>
+home/ledcontroller/ -> you will receive status changes on this topic <br/>
+home/ledcontroller/set -> control effects, brightness, animation, color on this topic <br/>
 home/ledcontroller/log -> receive log messages and errors on this topic 
 
 <h2>Control LED effects</h2>
