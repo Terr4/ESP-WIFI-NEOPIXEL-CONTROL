@@ -26,7 +26,7 @@ You should change the following variables to your needs:
 <h2>Control LED effects</h2>
 Send JSON commands to the MQTT SET topic to change the effect and brghtness:
 
-<h3>Set animation FIRE:</h3>
+Set animation FIRE:
 <pre>{"animation":"fun"}</pre>
 
 Set brightness (0-100):
