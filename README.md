@@ -1,13 +1,13 @@
 # ESP-WIFI-NEOPIXEL-CONTROL
-NodeMCU script to control NeoPixel ws2812b led strips.
+NodeMCU script to control NeoPixel ws2812b led strips.<br/>
 Control colors, brightness and some effects with HTTP or MQTT calls.
 <br/><br/>
-<strong>Video of Script in Action</strong><br/>https://www.youtube.com/watch?v=9A8iUpCb1MI
-Alexa control in the video is not part of this description.
+<h3>Video of Script in Action</h3>
+https://www.youtube.com/watch?v=9A8iUpCb1MI
+<br/>Alexa control in the video is not part of this description.
 
-<br/><br/>
-Example Calls below</strong>
-The http server gets initialzed on port 5001, this can be changed in the code.
+<h3>Config</h3>
+The http server gets initialzed on port 5001, this can be changed in the code.<br/>
 You should change the following variables to your needs:
 - wifi_ssid
 - wifi_password
@@ -17,10 +17,6 @@ You should change the following variables to your needs:
 - OTA_hostname
 - OTA_password
 - PixelCount
-
-
-
-
 
 <br/><br/>
 <h1>MQTT VERSION</h1>
