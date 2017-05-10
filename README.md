@@ -74,18 +74,18 @@ The "brightness" value is the percent value between 0 and 100, brightnessraw is 
 <br/><br/>
 <h3>ITEMS</h3>
 <pre>
-String  Light_L_Digiledstrip_Anim       "Current Animation [%s]"        <light>  {mqtt="<[openhab2:home/ledcontroller1:state:JSONPATH($.animation)]"}
-String  Light_L_Digiledstrip_Bright     "Brightness [%s]"               <dimmablelight>  {mqtt="<[openhab2:home/ledcontroller1:state:JSONPATH($.brightness)]"}
-String  Light_L_Digiledstrip_Uptime     "Uptime [%s h]"                 <clock>  {mqtt="<[openhab2:home/ledcontroller1:state:JSONPATH($.uptimeH)]"}
+String  Light_L_Digiledstrip_Anim       "Current Animation [%s]"        <light>  {mqtt="<[openhab2:home/ledcontroller:state:JSONPATH($.animation)]"}
+String  Light_L_Digiledstrip_Bright     "Brightness [%s]"               <dimmablelight>  {mqtt="<[openhab2:home/ledcontroller:state:JSONPATH($.brightness)]"}
+String  Light_L_Digiledstrip_Uptime     "Uptime [%s h]"                 <clock>  {mqtt="<[openhab2:home/ledcontroller:state:JSONPATH($.uptimeH)]"}
 Color   Light_L_Digiledstrip_Color      "Color"                         <colorwheel>
 
-String  Light_L_Digiledstrip            "Movie Screen Animation"                <light> { mqtt=">[openhab2:home/ledcontroller1/set:command:*:{animation\\:${command}}]" }
+String  Light_L_Digiledstrip            "LED Animation"                <light> { mqtt=">[openhab2:home/ledcontroller/set:command:*:{animation\\:${command}}]" }
 </pre>
 
 <br/><br/>
 <h3>SITEMAP</h3>
 <pre>
-Frame label="Movie Screen Light" icon="light" {
+Frame label="LED Light" icon="light" {
   Selection item=Light_L_Digiledstrip mappings=[off="off", colorblue="Movie", beam="Beam", fun="Party", cylon="Cylon", pulse="Pulse", fire="Fire", aqua="Aqua"]
   Colorpicker item=Light_L_Digiledstrip_Color
   Slider item=Light_L_Digiledstrip_Bright
@@ -104,8 +104,7 @@ when
   Item Light_L_Digiledstrip_Bright received command
 then
   logInfo( "FILE", "RULE: LED controller Brightness triggered")
-  //sendHttpGetRequest("http://192.168.0.116:5001/control?brightness=" + Light_L_Digiledstrip_Bright.state)
-  publish("openhab2","home/ledcontroller1/set","{brightness:" + Light_L_Digiledstrip_Bright.state + "}")
+  publish("openhab2","home/ledcontroller/set","{brightness:" + Light_L_Digiledstrip_Bright.state + "}")
 end
 
 rule "LED controller Color"
@@ -121,8 +120,7 @@ then
   var String blueValue  = String.format("%03d", ((color.blue.floatValue / 2.55).intValue))
   logInfo("FILE", "RED: "+ redValue + " GREEN: "+ greenValue +  " BLUE: "+ blueValue + "")
 
-  //sendHttpGetRequest("http://192.168.0.116:5001/control?animationid=color" + redValue + greenValue + blueValue)
-  publish("openhab2","home/ledcontroller1/set","{animation:color,color:{r:" + redValue + ",g:" + greenValue + ",b:" + blueValue + "}}")
+  publish("openhab2","home/ledcontroller/set","{animation:color,color:{r:" + redValue + ",g:" + greenValue + ",b:" + blueValue + "}}")
 end
 </pre>
 
@@ -135,7 +133,7 @@ end
 
 <br/><br/>
 <h1>WIFI VERSION (legacy)</h1>
-<br/><br/><br/>
+<br/><br/>
 <strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
 
 <pre>http://[ip]:5001/control?animationid=fun
@@ -145,7 +143,7 @@ http://[ip]:5001/control?animationid=aqua
 http://[ip]:5001/control?animationid=pulse
 http://[ip]:5001/control?animationid=cylon</pre>
 
-<br/><br/><br/>
+<br/><br/>
 <strong>Set Predefined Colors</strong>
 
 <pre>http://[ip]:5001/control?animationid=colorred
@@ -154,27 +152,22 @@ http://[ip]:5001/control?animationid=colorgreen
 http://[ip]:5001/control?animationid=colorblack
 http://[ip]:5001/control?animationid=colorwhite</pre>
 
-
-<br/><br/><br/>
+<br/><br/>
 <strong>Set Custom Colors</strong><br/>You can add an RGB color code (9 digits) at the end of the color command to set a custom color
 
 <pre>http://[ip]:5001/control?animationid=color255255255</pre>
 
-<br/><br/><br/>
+<br/><br/>
 <strong>Set Brightness</strong><br/>Value is a percent value between 0 and 100)
 
 <pre>http://[ip]:5001/control?brightness=20</pre>
 
-
-
-<br/><br/><br/>
+<br/><br/>
 <strong>Turn LED Strip off</strong>
 
 <pre>http://[ip]:5001/control?animationid=off</pre>
 
-
-
-<br/><br/><br/>
+<br/><br/>
 <strong>Get current status as JSON with</strong>
 
 <pre>http://[ip]:5001/control?status</pre>
