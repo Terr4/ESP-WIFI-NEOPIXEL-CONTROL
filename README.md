@@ -51,6 +51,7 @@ Note: color values only get considered when animation=color is selected
 During startup and in case an effect changes the controller sends a status message to the MQTT topic.
 The status in a JSON message and looks like the following.
 The "uptime" value are the milliseconds since the controller was started, "uptimeH" are the hours since it was started.
+The "brightness" value is the percent value between 0 and 100, brightnessraw is the actual set value between 0 and 255
 <pre>
 {
   "uptime":143248,
