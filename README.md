@@ -3,6 +3,8 @@ NodeMCU script to control NeoPixel ws2812b led strips.
 Control colors, brightness and some effects with HTTP or MQTT calls.
 <br/><br/>
 <strong>Video of Script in Action</strong><br/>https://www.youtube.com/watch?v=9A8iUpCb1MI
+Alexa control in the video is not part of this description.
+
 <br/><br/>
 Example Calls below</strong>
 The http server gets initialzed on port 5001, this can be changed in the code.
@@ -71,7 +73,7 @@ The "brightness" value is the percent value between 0 and 100, brightnessraw is 
 <br/><br/>
 <h1>Example OpenHAB2 Config</h1>
 
-<br/><br/>
+
 <h3>ITEMS</h3>
 <pre>
 String  Light_L_Digiledstrip_Anim       "Current Animation [%s]"        <light>  {mqtt="<[openhab2:home/ledcontroller:state:JSONPATH($.animation)]"}
@@ -82,7 +84,7 @@ Color   Light_L_Digiledstrip_Color      "Color"                         <colorwh
 String  Light_L_Digiledstrip            "LED Animation"                <light> { mqtt=">[openhab2:home/ledcontroller/set:command:*:{animation\\:${command}}]" }
 </pre>
 
-<br/><br/>
+
 <h3>SITEMAP</h3>
 <pre>
 Frame label="LED Light" icon="light" {
@@ -94,7 +96,7 @@ Frame label="LED Light" icon="light" {
 
 </pre>
 
-<br/><br/>
+
 <h3>RULES</h3>
 <pre>
 import java.awt.Color
@@ -131,7 +133,6 @@ end
 
 
 
-<br/><br/>
 <h1>WIFI VERSION (legacy)</h1>
 <br/><br/>
 <strong>Start Effects</strong><br/>Effects were mainly taken from the standard NeoPixelBus example library and slightly changed
