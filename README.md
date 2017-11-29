@@ -133,6 +133,7 @@ end
 
 See included STL file for a case for the Node MCU V2 (small version)
 
+<img src="https://raw.githubusercontent.com/Terr4/ESP-WIFI-NEOPIXEL-CONTROL/master/NodeMCUCase09.jpg" />
 
 
 <h1>WIFI VERSION (legacy)</h1>
