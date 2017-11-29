@@ -129,9 +129,9 @@ end
 </pre>
 
 
+<h1>3D Printed Case</h1>
 
-
-
+See included STL file for a case for the Node MCU V2 (small version)
 
 
 
